@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,9 +7,14 @@ import { ThemeProvider, useTheme } from '@core/theme';
 import { ToastProvider } from '@core/hooks/useToast';
 import { ErrorBoundary } from './ErrorBoundary';
 import { RootNavigator } from './navigation/RootNavigator';
+import { NotificationService } from '@core/notifications/NotificationService';
 
 const AppContent = () => {
   const { isDark } = useTheme();
+
+  useEffect(() => {
+    NotificationService.initialize();
+  }, []);
 
   return (
     <>

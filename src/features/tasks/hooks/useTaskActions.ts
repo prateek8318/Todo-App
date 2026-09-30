@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useTaskStore, selectAllTasks } from '../store/taskStore';
 import { Task } from '../types';
-import { noOpReminderService } from '../services/reminderService';
+import { reminderService } from '../services/reminderService';
 import { generateId } from '@core/utils/id';
 
 export const useTaskActions = () => {
@@ -21,7 +21,7 @@ export const useTaskActions = () => {
     
     // schedule reminder (no-op in phase 3)
     if (newTask.dueAt) {
-      newTask.notificationId = await noOpReminderService.scheduleReminder(newTask);
+      newTask.notificationId = await reminderService.scheduleReminder(newTask);
     }
 
     addTaskState(newTask);
@@ -37,10 +37,10 @@ export const useTaskActions = () => {
     // handle reminder changes
     if (updates.dueAt !== undefined || updates.title !== undefined) {
       if (task.notificationId) {
-        await noOpReminderService.cancelReminder(task.notificationId);
+        await reminderService.cancelReminder(task.notificationId);
       }
       if (updatedTask.dueAt) {
-        updatedTask.notificationId = await noOpReminderService.scheduleReminder(updatedTask);
+        updatedTask.notificationId = await reminderService.scheduleReminder(updatedTask);
       } else {
         updatedTask.notificationId = undefined;
       }
@@ -58,7 +58,7 @@ export const useTaskActions = () => {
     
     // cancel reminder if completed
     if (completed && task.notificationId) {
-      await noOpReminderService.cancelReminder(task.notificationId);
+      await reminderService.cancelReminder(task.notificationId);
     }
 
     updateTaskState({ ...task, completed, completedAt, updatedAt: Date.now() });
@@ -67,7 +67,7 @@ export const useTaskActions = () => {
   const deleteTask = useCallback(async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task && task.notificationId) {
-      await noOpReminderService.cancelReminder(task.notificationId);
+      await reminderService.cancelReminder(task.notificationId);
     }
     deleteTaskState(taskId);
   }, [tasks, deleteTaskState]);

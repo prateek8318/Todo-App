@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "385153855107",
+    "project_id": "to-do-app-6f007",
+    "storage_bucket": "to-do-app-6f007.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385153855107:android:620edceb78005a9c3175b6",
+        "android_client_info": {
+          "package_name": "com.prateek.tickd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-WGmYGbpAd0gLm0F3AxpxrQKEl3_zKy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
