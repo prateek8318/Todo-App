@@ -4,6 +4,7 @@ import { CompositeScreenProps } from '@react-navigation/native';
 
 export type MainTabsParamList = {
   Home: undefined;
+  Assistant: undefined;
   Settings: undefined;
 };
 

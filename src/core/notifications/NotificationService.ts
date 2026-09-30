@@ -40,7 +40,11 @@ export class NotificationService {
   }
 
   static async initialize() {
-    await this.requestPermissions();
-    await this.setupChannels();
+    try {
+      await this.setupChannels();
+      await this.requestPermissions();
+    } catch (error) {
+      console.warn('Notification setup could not finish.', error);
+    }
   }
 }

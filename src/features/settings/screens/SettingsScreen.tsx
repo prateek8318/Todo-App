@@ -4,10 +4,12 @@ import { ScreenContainer, Text, Card, Button, GradientHeader } from '@shared/com
 import { useTheme } from '@core/theme';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { CONFIG } from '@core/config';
+import { useTaskActions } from '@features/tasks/hooks/useTaskActions';
 
 export const SettingsScreen = () => {
   const { theme, preference, setPreference } = useTheme();
-  const { notificationsEnabled, toggleNotifications } = useSettingsStore();
+  const { notificationsEnabled } = useSettingsStore();
+  const { setNotificationsEnabled } = useTaskActions();
 
   const handlePrivacyPolicy = () => Linking.openURL('https://example.com/privacy');
 
@@ -20,7 +22,7 @@ export const SettingsScreen = () => {
             <Text variant="h3">Notifications</Text>
             <Switch 
               value={notificationsEnabled} 
-              onValueChange={toggleNotifications}
+              onValueChange={setNotificationsEnabled}
               trackColor={{ true: theme.colors.primary }}
             />
           </View>

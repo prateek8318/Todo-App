@@ -27,6 +27,7 @@ export const reminderService: ReminderService = {
           body: task.description || 'It is time to complete your task.',
           android: {
             channelId: 'task-reminders',
+            sound: 'default',
             pressAction: {
               id: 'default',
             },
