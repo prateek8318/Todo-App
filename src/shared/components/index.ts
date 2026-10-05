@@ -8,3 +8,4 @@ export * from './ScreenContainer';
 export * from './Toast';
 export * from './IconButton';
 export * from './GradientHeader';
+export * from './Loader';

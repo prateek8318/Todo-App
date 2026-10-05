@@ -1,7 +1,7 @@
 export const palette = {
-  primary: '#6366f1',
-  primaryDark: '#4f46e5',
-  secondary: '#ec4899',
+  primary: '#10b981', // Emerald 500
+  primaryDark: '#047857', // Emerald 700
+  secondary: '#f59e0b', // Amber
   backgroundLight: '#f8fafc',
   backgroundDark: '#0f172a',
   surfaceLight: '#ffffff',
@@ -11,15 +11,15 @@ export const palette = {
   textDark: '#f8fafc',
   textDarkSecondary: '#cbd5e1',
   error: '#ef4444',
-  success: '#22c55e',
+  success: '#10b981', // Emerald matches primary
   warning: '#f59e0b',
   borderLight: '#e2e8f0',
   borderDark: '#334155',
   priorityLow: '#3b82f6',
   priorityMedium: '#f59e0b',
   priorityHigh: '#ef4444',
-  gradientStart: '#6366f1',
-  gradientEnd: '#a855f7',
+  gradientStart: '#064e3b', // Deep Emerald/Teal
+  gradientEnd: '#10b981', // Emerald 500
 };
 
 export const spacing = {

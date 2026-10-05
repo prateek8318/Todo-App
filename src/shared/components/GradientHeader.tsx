@@ -7,10 +7,11 @@ import { useTheme } from '@core/theme';
 
 interface GradientHeaderProps {
   title: string;
+  leftAction?: React.ReactNode;
   rightAction?: React.ReactNode;
 }
 
-export const GradientHeader: React.FC<GradientHeaderProps> = ({ title, rightAction }) => {
+export const GradientHeader: React.FC<GradientHeaderProps> = ({ title, leftAction, rightAction }) => {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
@@ -27,7 +28,10 @@ export const GradientHeader: React.FC<GradientHeaderProps> = ({ title, rightActi
       </View>
       
       <View style={[styles.content, { paddingHorizontal: theme.spacing.lg }]}>
-        <Text variant="h2" weight="bold" style={{ color: '#ffffff' }}>{title}</Text>
+        <View style={styles.leftSection}>
+          {leftAction && <View style={styles.leftActionContainer}>{leftAction}</View>}
+          <Text variant="h2" weight="bold" style={{ color: '#ffffff' }}>{title}</Text>
+        </View>
         {rightAction && <View>{rightAction}</View>}
       </View>
     </View>
@@ -36,5 +40,7 @@ export const GradientHeader: React.FC<GradientHeaderProps> = ({ title, rightActi
 
 const styles = StyleSheet.create({
   container: { width: '100%', overflow: 'hidden' },
-  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  leftSection: { flexDirection: 'row', alignItems: 'center' },
+  leftActionContainer: { marginRight: 12 }
 });

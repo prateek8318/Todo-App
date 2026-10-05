@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Switch, StyleSheet, Linking } from 'react-native';
+import { View, Switch, StyleSheet, Linking, ScrollView } from 'react-native';
 import { ScreenContainer, Text, Card, Button, GradientHeader } from '@shared/components';
 import { useTheme } from '@core/theme';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -14,9 +14,9 @@ export const SettingsScreen = () => {
   const handlePrivacyPolicy = () => Linking.openURL('https://example.com/privacy');
 
   return (
-    <ScreenContainer edges={['top', 'left', 'right']}>
+    <ScreenContainer edges={['left', 'right']}>
       <GradientHeader title="Settings" />
-      <View style={{ padding: theme.spacing.md, gap: theme.spacing.md, width: '100%' }}>
+      <ScrollView contentContainerStyle={{ padding: theme.spacing.md, gap: theme.spacing.md, width: '100%', paddingBottom: 120 }}>
         <Card>
           <View style={styles.row}>
             <Text variant="h3">Notifications</Text>
@@ -51,7 +51,7 @@ export const SettingsScreen = () => {
         <Text align="center" color="textSecondary" style={{ marginTop: theme.spacing.xl }}>
           Version {CONFIG.VERSION}
         </Text>
-      </View>
+      </ScrollView>
     </ScreenContainer>
   );
 };

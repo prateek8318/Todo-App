@@ -27,9 +27,9 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({ task, onToggle, onPress
       return { transform: [{ scale }] };
     });
     return (
-      <View style={[styles.actionRight, { backgroundColor: theme.colors.error, borderRadius: theme.radius.lg }]}>
+      <View style={[styles.actionRight, { backgroundColor: theme.colors.error + '20', borderRadius: theme.radius.lg }]}>
         <Animated.View style={style}>
-          <Trash2 color="#fff" />
+          <Trash2 color={theme.colors.error} />
         </Animated.View>
       </View>
     );
@@ -41,9 +41,9 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({ task, onToggle, onPress
       return { transform: [{ scale }] };
     });
     return (
-      <View style={[styles.actionLeft, { backgroundColor: theme.colors.success, borderRadius: theme.radius.lg }]}>
+      <View style={[styles.actionLeft, { backgroundColor: theme.colors.success + '20', borderRadius: theme.radius.lg }]}>
         <Animated.View style={style}>
-          <CheckCircle2 color="#fff" />
+          <CheckCircle2 color={theme.colors.success} />
         </Animated.View>
       </View>
     );

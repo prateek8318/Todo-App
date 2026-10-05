@@ -45,7 +45,7 @@ export const HomeScreen = () => {
   };
 
   return (
-    <ScreenContainer edges={['top', 'left', 'right']}>
+    <ScreenContainer edges={['left', 'right']}>
       <GradientHeader title="My Tasks" />
       
       <View style={{ paddingHorizontal: theme.spacing.md, marginTop: theme.spacing.md }}>

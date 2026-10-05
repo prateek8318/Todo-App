@@ -28,15 +28,12 @@ export const TaskDetailScreen = () => {
   };
 
   return (
-    <ScreenContainer edges={['top', 'left', 'right']}>
+    <ScreenContainer edges={['left', 'right']}>
       <GradientHeader 
         title="Details" 
+        leftAction={<IconButton icon={<ArrowLeft color="#fff" />} onPress={() => navigation.goBack()} />}
         rightAction={<IconButton icon={<Trash2 color="#fff" />} onPress={handleDelete} />}
       />
-      
-      <View style={{ position: 'absolute', top: insets.top + 8, left: 16, zIndex: 10 }}>
-         <IconButton icon={<ArrowLeft color="#fff" />} onPress={() => navigation.goBack()} />
-      </View>
 
       <ScrollView contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>

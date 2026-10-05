@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Text, Button, Chip } from '@shared/components';
@@ -9,6 +9,8 @@ import { Task, TaskPriority } from '../types';
 import { useTaskActions } from '../hooks/useTaskActions';
 import { validateTaskTitle } from '../utils/validation';
 import { formatDate, formatTime } from '@core/utils/date';
+import { aiService } from '@features/ai/services/aiService';
+import { Wand2 } from 'lucide-react-native';
 
 export interface TaskSheetRef {
   present: (task?: Task) => void;
@@ -29,6 +31,7 @@ export const TaskSheet = forwardRef<TaskSheetRef, {}>((_, ref) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   useImperativeHandle(ref, () => ({
     present: (task) => {
@@ -67,6 +70,27 @@ export const TaskSheet = forwardRef<TaskSheetRef, {}>((_, ref) => {
     bottomSheetRef.current?.dismiss();
   };
 
+  const handleAiParse = async () => {
+    if (!title.trim()) return;
+    setIsAiLoading(true);
+    setError(null);
+    try {
+      const parsed = await aiService.parseTaskFromText(title);
+      if (parsed) {
+        setTitle(parsed.title);
+        setDescription(parsed.description || description);
+        setPriority(parsed.priority);
+        if (parsed.dueAt) setDueAt(new Date(parsed.dueAt));
+      } else {
+        setError('AI parse failed. Please check your API key or try again.');
+      }
+    } catch (e) {
+      setError('An error occurred while connecting to AI.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
@@ -77,16 +101,21 @@ export const TaskSheet = forwardRef<TaskSheetRef, {}>((_, ref) => {
       keyboardBlurBehavior="restore"
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <BottomSheetScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 20, padding: theme.spacing.lg }]}>
+        <BottomSheetScrollView contentContainerStyle={[styles.container, { padding: theme.spacing.lg, paddingBottom: insets.bottom + 20 }]}>
           <Text variant="h2" weight="bold" style={{ marginBottom: theme.spacing.md }}>{editingId ? 'Edit Task' : 'New Task'}</Text>
           
-          <BottomSheetTextInput
-            style={[styles.input, { borderColor: error ? theme.colors.error : theme.colors.border, color: theme.colors.text }]}
-            placeholder="Task Title"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={title}
-            onChangeText={(t) => { setTitle(t); setError(null); }}
-          />
+          <View style={[styles.inputRow, { borderColor: error ? theme.colors.error : theme.colors.border }]}>
+            <BottomSheetTextInput
+              style={[styles.flexInput, { color: theme.colors.text }]}
+              placeholder="Task Title (e.g. Call mom tomorrow at 5pm)"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={title}
+              onChangeText={(t) => { setTitle(t); setError(null); }}
+            />
+            <TouchableOpacity onPress={handleAiParse} style={styles.aiButton} disabled={isAiLoading || !title.trim()}>
+              {isAiLoading ? <ActivityIndicator size="small" color={theme.colors.primary} /> : <Wand2 size={20} color={title.trim() ? theme.colors.primary : theme.colors.textSecondary} />}
+            </TouchableOpacity>
+          </View>
           {error && <Text color="error" variant="caption" style={{ marginBottom: theme.spacing.md }}>{error}</Text>}
           
           <BottomSheetTextInput
@@ -138,5 +167,8 @@ export const TaskSheet = forwardRef<TaskSheetRef, {}>((_, ref) => {
 const styles = StyleSheet.create({
   container: { flexGrow: 1 },
   input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 8, marginBottom: 16, paddingRight: 8 },
+  flexInput: { flex: 1, padding: 12, fontSize: 16 },
+  aiButton: { padding: 8, justifyContent: 'center', alignItems: 'center' },
   row: { flexDirection: 'row', gap: 12 }
 });
