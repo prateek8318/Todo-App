@@ -35,6 +35,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: theme.spacing.sm, paddingHorizontal: theme.spacing.sm }}>
         <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
+        <Chip label="Today" selected={filter === 'today'} onPress={() => setFilter('today')} />
+        <Chip label="Routine" selected={filter === 'routine'} onPress={() => setFilter('routine')} />
         <Chip label="Pending" selected={filter === 'pending'} onPress={() => setFilter('pending')} />
         <Chip label="Completed" selected={filter === 'completed'} onPress={() => setFilter('completed')} />
         

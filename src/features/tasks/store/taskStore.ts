@@ -2,10 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { zustandStorage } from '@core/storage';
 import { Task } from '../types';
+import { refreshRecurringTask, startOfDay } from '../utils/recurrence';
 
 interface TaskState {
   tasks: Task[];
   _hasHydrated: boolean;
+  today: number;
 }
 
 interface TaskActions {
@@ -14,6 +16,7 @@ interface TaskActions {
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   setTasks: (tasks: Task[]) => void;
+  refreshRoutines: () => void;
 }
 
 type TaskStore = TaskState & TaskActions;
@@ -23,6 +26,14 @@ export const useTaskStore = create<TaskStore>()(
     (set) => ({
       tasks: [],
       _hasHydrated: false,
+      today: startOfDay(Date.now()),
+      refreshRoutines: () => set((state) => {
+        const now = Date.now();
+        const today = startOfDay(now);
+        const tasks = state.tasks.map(task => refreshRecurringTask(task, now));
+        if (today === state.today && tasks.every((task, index) => task === state.tasks[index])) return state;
+        return { tasks, today };
+      }),
       setHydrated: (state: boolean) => set({ _hasHydrated: state }),
       addTask: (task: Task) => set((state: TaskStore) => ({ tasks: [...state.tasks, task] })),
       updateTask: (updatedTask: Task) => set((state: TaskStore) => ({

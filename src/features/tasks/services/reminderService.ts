@@ -1,52 +1,56 @@
 import notifee, { TimestampTrigger, TriggerType } from '@notifee/react-native';
 import { Task } from '../types';
+import { buildReminderPlan } from '../utils/reminderPlan';
 
-export interface ReminderService {
-  scheduleReminder(task: Task): Promise<string | undefined>;
-  cancelReminder(notificationId: string): Promise<void>;
-}
+const fingerprints = new Map<string, string>();
+let queue = Promise.resolve();
 
-export const reminderService: ReminderService = {
-  scheduleReminder: async (task: Task) => {
-    if (!task.dueAt) return undefined;
-    
-    if (task.dueAt < Date.now()) return undefined;
-
-    const notificationId = task.notificationId || `task-${task.id}`;
-
-    const trigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: task.dueAt,
-    };
-
-    try {
-      await notifee.createTriggerNotification(
-        {
-          id: notificationId,
-          title: 'Task Due: ' + task.title,
-          body: task.description || 'It is time to complete your task.',
-          android: {
-            channelId: 'task-reminders',
-            sound: 'default',
-            pressAction: {
-              id: 'default',
+export const reminderService = {
+  // Serialize updates so a rapid edit/delete cannot restore cancelled reminders.
+  syncReminders: (tasks: Task[], enabled: boolean): Promise<void> => {
+    queue = queue
+      .then(async () => {
+        const plan = enabled ? buildReminderPlan(tasks, Date.now()) : [];
+        const desiredIds = new Set(plan.map(item => item.id));
+        const existingIds = await notifee.getTriggerNotificationIds();
+        const existing = new Set(existingIds);
+        for (const id of existingIds) {
+          if (id.startsWith('task-') && !desiredIds.has(id)) {
+            await notifee.cancelNotification(id);
+            fingerprints.delete(id);
+          }
+        }
+        for (const item of plan) {
+          const body = item.task.description || 'A little step for your day. You have got this!';
+          const title = `${item.task.repeat && item.task.repeat !== 'none' ? 'Routine' : 'Task'}: ${item.task.title}`;
+          const fingerprint = JSON.stringify([title, body, item.timestamp]);
+          if (existing.has(item.id) && fingerprints.get(item.id) === fingerprint) continue;
+          if (item.timestamp <= Date.now()) continue;
+          const trigger: TimestampTrigger = {
+            type: TriggerType.TIMESTAMP,
+            timestamp: item.timestamp,
+          };
+          await notifee.createTriggerNotification(
+            {
+              id: item.id,
+              title,
+              body,
+              data: { taskId: item.task.id },
+              android: {
+                channelId: 'task-reminders',
+                sound: 'default',
+                pressAction: { id: 'default' },
+              },
+              ios: { sound: 'default' },
             },
-          },
-        },
-        trigger
-      );
-      return notificationId;
-    } catch (e) {
-      console.error('Failed to schedule reminder', e);
-      return undefined;
-    }
+            trigger,
+          );
+          fingerprints.set(item.id, fingerprint);
+        }
+      })
+      .catch(error => {
+        console.warn('Task reminders could not be updated.', error);
+      });
+    return queue;
   },
-
-  cancelReminder: async (notificationId: string) => {
-    try {
-      await notifee.cancelNotification(notificationId);
-    } catch (e) {
-      console.error('Failed to cancel reminder', e);
-    }
-  }
 };

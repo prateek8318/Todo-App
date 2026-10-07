@@ -1,28 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { BackHandler, Modal, View, StyleSheet } from 'react-native';
+import { BackHandler, Modal, View } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme as NavDarkTheme, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '@core/theme';
 import { RootStackParamList } from './types';
 import { MainTabs } from './MainTabs';
 import { OnboardingScreen } from '@features/onboarding/screens/OnboardingScreen';
-import { AuthScreen } from '@features/auth/screens/AuthScreen';
 import { useOnboardingStore } from '@features/onboarding/store/useOnboardingStore';
-import { useAuthStore } from '@features/auth/store/useAuthStore';
 import { TaskDetailScreen } from '@features/tasks/screens/TaskDetailScreen';
 import { Text, Button, Card } from '@shared/components';
 import { LogOut } from 'lucide-react-native';
-
-// Safe Auth Wrapper
-let safeAuth: any = () => ({
-  onAuthStateChanged: (cb: any) => { cb(null); return () => {}; },
-});
-try {
-  const fbAuth = require('@react-native-firebase/auth');
-  if (typeof fbAuth === 'function') safeAuth = fbAuth;
-  else if (fbAuth && typeof fbAuth.default === 'function') safeAuth = fbAuth.default;
-  else if (fbAuth && typeof fbAuth.auth === 'function') safeAuth = fbAuth.auth;
-} catch (e) {}
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -31,27 +18,8 @@ export const RootNavigator = () => {
   const { theme, isDark } = useTheme();
   
   const { hasCompletedOnboarding, _hasHydrated: _onboardingHydrated } = useOnboardingStore();
-  const { user, initializing, setUser, setInitializing } = useAuthStore();
   
-  const [isReady, setIsReady] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
-
-  // Handle Firebase Auth state changes
-  useEffect(() => {
-    try {
-      const subscriber = safeAuth().onAuthStateChanged((usr: any) => {
-        setUser(usr);
-        if (initializing) setInitializing(false);
-      });
-      return subscriber;
-    } catch (e) {
-      if (initializing) setInitializing(false);
-    }
-  }, [initializing, setUser, setInitializing]);
-
-  useEffect(() => {
-    if (_onboardingHydrated && !initializing) setIsReady(true);
-  }, [_onboardingHydrated, initializing]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -66,7 +34,7 @@ export const RootNavigator = () => {
     return () => subscription.remove();
   }, [navigationRef]);
 
-  if (!isReady) return null;
+  if (!_onboardingHydrated) return null;
 
   const navigationTheme = {
     ...(isDark ? NavDarkTheme : DefaultTheme),
@@ -86,8 +54,6 @@ export const RootNavigator = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {!hasCompletedOnboarding ? (
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          ) : !user ? (
-            <Stack.Screen name="Auth" component={AuthScreen} />
           ) : (
             <>
               <Stack.Screen name="Main" component={MainTabs} />

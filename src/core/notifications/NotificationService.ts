@@ -9,17 +9,21 @@ import notifee, { AuthorizationStatus, AndroidImportance } from '@notifee/react-
 export class NotificationService {
   static async requestPermissions() {
     let enabled = false;
-    if (getApps().length > 0) {
-      const authStatus = await requestPermission(getMessaging());
-      enabled =
-        authStatus === MessagingAuthorizationStatus.AUTHORIZED ||
-        authStatus === MessagingAuthorizationStatus.PROVISIONAL;
+    try {
+      if (getApps().length > 0) {
+        const authStatus = await requestPermission(getMessaging());
+        enabled =
+          authStatus === MessagingAuthorizationStatus.AUTHORIZED ||
+          authStatus === MessagingAuthorizationStatus.PROVISIONAL;
 
-      if (enabled) {
-        console.log('FCM Authorization status:', authStatus);
+        if (enabled) {
+          console.log('FCM Authorization status:', authStatus);
+        }
+      } else {
+        console.warn('Firebase is not configured; skipping FCM permission request.');
       }
-    } else {
-      console.warn('Firebase is not configured; skipping FCM permission request.');
+    } catch (error) {
+      console.warn('Remote notifications are unavailable.', error);
     }
 
     const settings = await notifee.requestPermission();
@@ -27,7 +31,10 @@ export class NotificationService {
       console.log('Notifee Authorization status:', settings.authorizationStatus);
     }
 
-    return enabled;
+    return (
+      settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+      settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
+    );
   }
 
   static async setupChannels() {

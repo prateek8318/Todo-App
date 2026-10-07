@@ -1,6 +1,15 @@
 import { Task, TaskPriority } from '@features/tasks/types';
 
-const OPENAI_API_KEY = (globalThis as typeof globalThis & { OPENAI_API_KEY?: string }).OPENAI_API_KEY ?? '';
+// Paste your OpenAI API key between these quotes.
+export const AI_CONFIG = { apiKey: '' };
+
+const getApiKey = (): string => {
+  const key = AI_CONFIG.apiKey || (globalThis as typeof globalThis & { OPENAI_API_KEY?: string }).OPENAI_API_KEY;
+  return typeof key === 'string' ? key.trim() : '';
+};
+
+const INSIGHT_FALLBACK = 'Aaj ka din shandaar hai, ek ek karke apne tasks niptao aur aage badho!';
+const FINANCE_FALLBACK = 'Abhi AI advice available nahi hai. Apne income, expenses aur pending splits ko yahin track karte raho.';
 
 export interface AITaskSuggestion {
   title: string;
@@ -9,75 +18,58 @@ export interface AITaskSuggestion {
   dueAt?: number;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// Missing credentials, HTTP errors, refusals and malformed responses are normal
+// unavailable states, not exceptions to display in React Native's error overlay.
+async function requestContent(prompt: string, temperature: number): Promise<string | null> {
+  const key = getApiKey();
+  if (!key) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key.trim()}` },
+      body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature }),
+    });
+    if (!response.ok) return null;
+    const data: unknown = await response.json();
+    if (!isRecord(data) || data.error || !Array.isArray(data.choices)) return null;
+    const choice: unknown = data.choices[0];
+    if (!isRecord(choice) || !isRecord(choice.message)) return null;
+    const content = choice.message.content;
+    return typeof content === 'string' && content.trim() ? content.trim() : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export const aiService = {
-  /**
-   * Generates a personalized insight/motivational message based on current tasks
-   */
+  isConfigured: (): boolean => !!getApiKey(),
   generateDailyInsight: async (tasks: Task[]): Promise<string> => {
-    try {
-      const openTasks = tasks.filter(t => !t.completed).map(t => ({ title: t.title, priority: t.priority }));
-      
-      const prompt = `You are a productivity coach. The user has these pending tasks: ${JSON.stringify(openTasks)}. 
+    const openTasks = tasks.filter(task => !task.completed).map(task => ({ title: task.title, priority: task.priority }));
+    const prompt = `You are a productivity coach. The user has these pending tasks: ${JSON.stringify(openTasks)}.
       Give a short 2-sentence motivational advice in Hinglish (Hindi written in English alphabet) on how they should tackle their day. Keep it friendly and concise.`;
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-        })
-      });
-
-      const data = await response.json();
-      return data.choices[0].message.content.trim();
-    } catch (error) {
-      console.error('AI Insight Error:', error);
-      return 'Aaj ka din shandaar hai, ek ek karke apne tasks niptao aur aage badho!';
-    }
+    return (await requestContent(prompt, 0.7)) ?? INSIGHT_FALLBACK;
   },
 
-  /**
-   * Generates a constructive budget plan (50-30-20 rule) and financial advice
-   */
   generateFinancialAdvice: async (income: number, expense: number, splitOwed: number): Promise<string> => {
-    try {
-      const prompt = `You are a smart financial advisor.
-      The user's monthly income is ₹${income}, their total expenses so far are ₹${expense}, and friends owe them ₹${splitOwed}.
-      Generate a practical "Smart Budget Plan" using the 50-30-20 rule or similar logic. 
+    const prompt = `You are a smart financial advisor.
+      The user's monthly income is INR ${income}, their total expenses so far are INR ${expense}, and friends owe them INR ${splitOwed}.
+      Generate a practical "Smart Budget Plan" using the 50-30-20 rule or similar logic.
       Write a helpful, constructive 2-3 sentence advice in Hinglish (Hindi written in English alphabet) explaining how they should allocate their remaining salary and manage expenses/splits to save better.`;
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.5,
-        })
-      });
-
-      const data = await response.json();
-      if(data.error) return 'Bhai pehle apni OpenAI API key fix karle, tere financial AI advisor ka connection cut gaya hai! 😅';
-      return data.choices[0].message.content.trim();
-    } catch (error) {
-      return 'Bhai tera hisaab itna tagda hai ki mera system hang ho gaya. API Key check karle!';
-    }
+    return (await requestContent(prompt, 0.5)) ?? FINANCE_FALLBACK;
   },
 
-  /**
-   * Parses natural language into a structured task
-   */
   parseTaskFromText: async (text: string): Promise<AITaskSuggestion | null> => {
-    try {
-      const prompt = `You are a helpful AI assistant in a To-Do app. 
+    if (!text.trim()) return null;
+    const prompt = `You are a helpful AI assistant in a To-Do app.
       The user entered this task: "${text}".
       Extract the details and return ONLY a JSON object with this exact structure:
       {
@@ -87,35 +79,22 @@ export const aiService = {
         "dueAt": "ISO date string if a time/date is mentioned, otherwise null"
       }
       Assume current date/time is ${new Date().toISOString()}. No markdown, just pure JSON.`;
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
-        })
-      });
-
-      const data = await response.json();
-      const content = data.choices[0].message.content.trim();
-      // Remove any potential markdown block backticks
-      const cleanJson = content.replace(/```json/g, '').replace(/```/g, '');
-      const parsed = JSON.parse(cleanJson);
-
+    const content = await requestContent(prompt, 0.3);
+    if (!content) return null;
+    try {
+      const cleanJson = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const parsed: unknown = JSON.parse(cleanJson);
+      if (!isRecord(parsed) || typeof parsed.title !== 'string' || !parsed.title.trim()) return null;
+      const priority: TaskPriority = parsed.priority === 'low' || parsed.priority === 'high' ? parsed.priority : 'medium';
+      const dueAt = typeof parsed.dueAt === 'string' ? Date.parse(parsed.dueAt) : NaN;
       return {
-        title: parsed.title,
-        description: parsed.description,
-        priority: parsed.priority || 'medium',
-        dueAt: parsed.dueAt ? new Date(parsed.dueAt).getTime() : undefined,
+        title: parsed.title.trim(),
+        description: typeof parsed.description === 'string' ? parsed.description.trim() : '',
+        priority,
+        dueAt: Number.isFinite(dueAt) ? dueAt : undefined,
       };
-    } catch (error) {
-      console.error('AI Parse Task Error:', error);
+    } catch {
       return null;
     }
-  }
+  },
 };

@@ -7,8 +7,9 @@ import { useTheme } from '@core/theme';
 import { Task } from '../types';
 import { AnimatedCheckbox } from './AnimatedCheckbox';
 import { PriorityChip } from './PriorityChip';
-import { formatDate } from '@core/utils/date';
-import { Calendar, Trash2, CheckCircle2 } from 'lucide-react-native';
+import { formatDate, formatTime } from '@core/utils/date';
+import { Calendar, Trash2, CheckCircle2, Repeat2 } from 'lucide-react-native';
+import { repeatLabels } from '../utils/recurrence';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 interface TaskCardProps {
@@ -18,35 +19,30 @@ interface TaskCardProps {
   onDelete?: (id: string) => void;
 }
 
+const SwipeAction = ({ dragX, direction }: { dragX: SharedValue<number>; direction: 'left' | 'right' }) => {
+  const { theme } = useTheme();
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(dragX.value, direction === 'right' ? [-100, 0] : [0, 100], direction === 'right' ? [1, 0] : [0, 1], 'clamp') }],
+  }));
+  const color = direction === 'right' ? theme.colors.error : theme.colors.success;
+  return (
+    <View style={[direction === 'right' ? styles.actionRight : styles.actionLeft, { backgroundColor: color + '20', borderRadius: theme.radius.lg }]}>
+      <Animated.View style={style}>
+        {direction === 'right' ? <Trash2 color={color} /> : <CheckCircle2 color={color} />}
+      </Animated.View>
+    </View>
+  );
+};
+
 export const TaskCard: React.FC<TaskCardProps> = memo(({ task, onToggle, onPress, onDelete }) => {
   const { theme } = useTheme();
 
   const renderRightActions = (progress: SharedValue<number>, dragX: SharedValue<number>) => {
-    const style = useAnimatedStyle(() => {
-      const scale = interpolate(dragX.value, [-100, 0], [1, 0], 'clamp');
-      return { transform: [{ scale }] };
-    });
-    return (
-      <View style={[styles.actionRight, { backgroundColor: theme.colors.error + '20', borderRadius: theme.radius.lg }]}>
-        <Animated.View style={style}>
-          <Trash2 color={theme.colors.error} />
-        </Animated.View>
-      </View>
-    );
+    return <SwipeAction dragX={dragX} direction="right" />;
   };
 
   const renderLeftActions = (progress: SharedValue<number>, dragX: SharedValue<number>) => {
-    const style = useAnimatedStyle(() => {
-      const scale = interpolate(dragX.value, [0, 100], [0, 1], 'clamp');
-      return { transform: [{ scale }] };
-    });
-    return (
-      <View style={[styles.actionLeft, { backgroundColor: theme.colors.success + '20', borderRadius: theme.radius.lg }]}>
-        <Animated.View style={style}>
-          <CheckCircle2 color={theme.colors.success} />
-        </Animated.View>
-      </View>
-    );
+    return <SwipeAction dragX={dragX} direction="left" />;
   };
 
   const handleSwipeOpen = (direction: 'left' | 'right') => {
@@ -92,8 +88,14 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({ task, onToggle, onPress
                 <View style={[styles.dateContainer, { marginTop: theme.spacing.xs }]}>
                   <Calendar size={14} color={theme.colors.textSecondary} />
                   <Text variant="caption" color="textSecondary" style={{ marginLeft: 4 }}>
-                    {formatDate(task.dueAt)}
+                    {formatDate(task.dueAt)} · {formatTime(task.dueAt)}
                   </Text>
+                </View>
+              )}
+              {task.repeat && task.repeat !== 'none' && (
+                <View style={[styles.dateContainer, { marginTop: theme.spacing.xs }]}>
+                  <Repeat2 size={14} color={theme.colors.primary} />
+                  <Text variant="caption" style={{ marginLeft: 4, color: theme.colors.primary }}>{repeatLabels[task.repeat]}</Text>
                 </View>
               )}
             </View>

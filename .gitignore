@@ -33,6 +33,9 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+# Keep the requested release signing backup in this repository.
+!/android/app/release.keystore
+!/android/app/release.jks
 .kotlin/
 
 # node.js

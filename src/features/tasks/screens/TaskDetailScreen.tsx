@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ScreenContainer, Text, GradientHeader, IconButton, Card, Button } from '@shared/components';
@@ -8,17 +8,18 @@ import { useTaskActions } from '../hooks/useTaskActions';
 import { useTheme } from '@core/theme';
 import { ArrowLeft, Trash2, Calendar } from 'lucide-react-native';
 import { formatDate, formatTime } from '@core/utils/date';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TaskSheet, TaskSheetRef } from '../components/TaskSheet';
+import { nextOccurrence, repeatLabels } from '../utils/recurrence';
 
 export const TaskDetailScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
   const taskId = route.params?.taskId;
   
   const task = useTaskStore(selectTaskById(taskId));
   const { toggleTask, deleteTask } = useTaskActions();
+  const sheetRef = useRef<TaskSheetRef>(null);
 
   if (!task) return null;
 
@@ -58,12 +59,22 @@ export const TaskDetailScreen = () => {
           </Card>
         )}
 
+        {task.repeat && task.repeat !== 'none' && task.dueAt && (
+          <Card>
+            <Text variant="h3" style={{ marginBottom: theme.spacing.sm }}>Repeats {repeatLabels[task.repeat].toLowerCase()}</Text>
+            <Text color="textSecondary">Next occurrence: {formatDate(nextOccurrence(task.dueAt, task.repeat, task.repeatAnchorAt))} at {formatTime(task.dueAt)}</Text>
+            <Text variant="caption" color="textSecondary" style={{ marginTop: 8 }}>Completing this occurrence keeps the next one on your calendar. Edit Repeat to Once to stop the routine.</Text>
+          </Card>
+        )}
+
         <Button 
           variant={task.completed ? 'secondary' : 'primary'}
-          label={task.completed ? 'Mark as Pending' : 'Mark as Completed'} 
+          label={task.completed ? 'Mark as Pending' : task.repeat && task.repeat !== 'none' ? 'Complete This Occurrence' : 'Mark as Completed'}
           onPress={() => toggleTask(task.id)} 
         />
+        <Button label="Edit Task" variant="outline" onPress={() => sheetRef.current?.present(task)} />
       </ScrollView>
+      <TaskSheet ref={sheetRef} />
     </ScreenContainer>
   );
 };

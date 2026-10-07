@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useTaskStore, selectAllTasks } from '../store/taskStore';
 import { TaskPriority } from '../types';
+import { isTaskForToday } from '../utils/recurrence';
 
-export type TaskFilter = 'all' | 'pending' | 'completed';
+export type TaskFilter = 'all' | 'today' | 'routine' | 'pending' | 'completed';
 
 export const useTasks = (
   filter: TaskFilter = 'all',
@@ -11,12 +12,17 @@ export const useTasks = (
   sortBy: 'createdAt' | 'dueAt' | 'priority' = 'createdAt'
 ) => {
   const tasks = useTaskStore(selectAllTasks);
+  const today = useTaskStore(state => state.today);
 
   return useMemo(() => {
     let filtered = tasks;
 
     // Filter by status
-    if (filter === 'pending') {
+    if (filter === 'today') {
+      filtered = filtered.filter(t => isTaskForToday(t, today));
+    } else if (filter === 'routine') {
+      filtered = filtered.filter(t => t.repeat && t.repeat !== 'none');
+    } else if (filter === 'pending') {
       filtered = filtered.filter(t => !t.completed);
     } else if (filter === 'completed') {
       filtered = filtered.filter(t => t.completed);
@@ -50,5 +56,5 @@ export const useTasks = (
       // default: createdAt descending
       return b.createdAt - a.createdAt;
     });
-  }, [tasks, filter, searchQuery, priorityFilter, sortBy]);
+  }, [tasks, filter, searchQuery, priorityFilter, sortBy, today]);
 };

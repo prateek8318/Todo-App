@@ -10,7 +10,6 @@ export type MainTabsParamList = {
 
 export type RootStackParamList = {
   Onboarding: undefined;
-  Auth: undefined;
   Main: undefined;
   TaskDetail: { taskId: string };
 };
