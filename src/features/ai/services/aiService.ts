@@ -1,7 +1,8 @@
+import { OPENAI_API_KEY } from '@env';
 import { Task, TaskPriority } from '@features/tasks/types';
 
-// Paste your OpenAI API key between these quotes.
-export const AI_CONFIG = { apiKey: '' };
+// Loaded from the ignored local .env file at build time.
+export const AI_CONFIG = { apiKey: OPENAI_API_KEY ?? '' };
 
 const getApiKey = (): string => {
   const key = AI_CONFIG.apiKey || (globalThis as typeof globalThis & { OPENAI_API_KEY?: string }).OPENAI_API_KEY;

@@ -105,8 +105,10 @@ You've successfully run and modified your React Native App. :partying_face:
 
 ## OpenAI key and release signing
 
-Paste your OpenAI key into `AI_CONFIG.apiKey` at the top of
-`src/features/ai/services/aiService.ts`. Save the file and reload the app.
+Set `OPENAI_API_KEY` in the local `.env` file (see `.env.example`).
+The `.env` file is ignored by Git. After changing it, restart Metro with
+`npm start -- --reset-cache` and rebuild the app.
+This value is included in the app bundle; use a backend for production secrets.
 An empty key uses local insight fallbacks and leaves AI task parsing unavailable.
 
 Release signing details are saved in `android/release-signing.properties`.

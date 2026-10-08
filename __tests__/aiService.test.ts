@@ -22,12 +22,12 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-test('the hardcoded configuration is used for AI requests', async () => {
-  AI_CONFIG.apiKey = 'test-hardcoded-key';
+test('the environment configuration is used for AI requests', async () => {
+  AI_CONFIG.apiKey = 'test-configured-key';
   mockFetch.mockResolvedValue(response({ choices: [{ message: { content: 'Ready.' } }] }));
   expect(aiService.isConfigured()).toBe(true);
   expect(await aiService.generateDailyInsight([])).toBe('Ready.');
-  expect(mockFetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer test-hardcoded-key' }) }));
+  expect(mockFetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer test-configured-key' }) }));
 });
 
 test('missing API key uses fallbacks without sending an unauthorized request', async () => {
